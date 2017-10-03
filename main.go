@@ -203,24 +203,50 @@ func (tr *transformer) processRequire() error {
 
 func (tr *transformer) processExtend(indent string, out io.Writer) error {
 	var rule string
+	var rules []string
+	var err error
 	tk := processSpace(tr.scan)
 	for tk.Type != scanner.TokenChar || tk.Value != ";" {
-		rule += tk.Value
+		if tk.Type == scanner.TokenChar && tk.Value == "," {
+			rules = append(rules, rule)
+			rule = ""
+		} else {
+			rule += tk.Value
+		}
 		tk = processSpace(tr.scan)
 	}
+	if rule != "" {
+		rules = append(rules, rule)
+	}
+	if out == nil {
+		return nil
+	}
 
-	if properties, ok := tr.requiredRules.rules[rule]; ok && out != nil {
-		for i, prop := range properties {
-			if i != 0 {
-				_, err := out.Write([]byte(indent))
+	for i, rule := range rules {
+		if i != 0 && out != nil {
+			fmt.Fprint(out, indent)
+		}
+		var prefix = ""
+		if len(rules) > 1 {
+			prefix = fmt.Sprintf("[%d]", i)
+		}
+		if properties, ok := tr.requiredRules.rules[rule]; ok {
+			_, err = fmt.Fprintf(out, "/* @extend%s %s */\n", prefix, rule)
+			if err != nil {
+				return err
+			}
+			for _, prop := range properties {
+				_, err = fmt.Fprintf(out, "%s  %s", indent, prop)
 				if err != nil {
 					return err
 				}
 			}
-			_, err := out.Write([]byte(prop))
+			_, err = fmt.Fprint(out, "\n")
 			if err != nil {
 				return err
 			}
+		} else {
+			_, err = fmt.Fprintf(out, "/* NOT FOUND @extend%s %s */\n", prefix, rule)
 		}
 	}
 

@@ -21,12 +21,12 @@ final result.
 @extend
 -------
 
-- Usage: `@extend <CSS selector>;`
+- Usage: `@extend <CSS selector>, <CSS selector>, ...;`
 - Context: inside another selector
 
 Extends the current selector with the selector specified. The CSS properties
 corresponding to this selector that are in the required stylesheets are put in
-place of the `@extend` directive.
+place of the `@extend` directive. Helpful comments are added.
 
 Build
 =====
